@@ -12,6 +12,8 @@ class Trainer: Object, Identifiable {
     @Persisted(primaryKey: true) var id: ObjectId
     @Persisted var email: String = ""
     @Persisted var passwordHash: String = ""
+    @Persisted var name: String = ""
+    @Persisted var surname: String = ""
     @Persisted var age: Int = 0
     @Persisted var experience: Int = 0
     @Persisted var travelTime: Double = 0.0

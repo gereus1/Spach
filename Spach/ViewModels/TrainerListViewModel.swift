@@ -1,51 +1,56 @@
+// ViewModels/TrainerListViewModel.swift
 import Foundation
-import Combine
 import RealmSwift
 
 class TrainerListViewModel: ObservableObject {
-    @Published var searchText = "" {
-        didSet { filter() }
-    }
-    @Published private(set) var trainers: [Trainer] = []
+    // MARK: – дані
+    @Published var trainers: [Trainer] = []
+    @Published var searchText = ""             // ← додаємо пошук
 
-    private var allTrainers: [Trainer] = []
     private let service = RealmService()
 
+    // MARK: – ініціалізація
     init() {
-        loadAll()
+        load()
     }
 
-    private func loadAll() {
-        let results = service.fetchTrainers()
-        allTrainers = Array(results)
-        trainers = allTrainers
+    // MARK: – завантажити всіх тренерів
+    func load() {
+        trainers = Array(service.fetchTrainers())
     }
 
-    private func filter() {
-        let text = searchText.lowercased().trimmingCharacters(in: .whitespaces)
-        if text.isEmpty {
-            trainers = allTrainers
-        } else {
-            trainers = allTrainers.filter {
-                $0.email.lowercased().contains(text)
-                || $0.languages.joined(separator: " ").lowercased().contains(text)
-            }
+    // MARK: – фільтрований список для List + .searchable
+    var filteredTrainers: [Trainer] {
+        guard !searchText.isEmpty else {
+            return trainers
+        }
+        return trainers.filter {
+            $0.name.localizedCaseInsensitiveContains(searchText)
         }
     }
-    
-    func recommended(for user: User) -> [Trainer] {
-      let trainers = Array(RealmService().fetchTrainers())
-      // збираєш вектор уподобань з полів user:
-      let userVec: [Double] = [
-        user.pricePerSession,
-        user.rating,
-        Double(user.expectedTrainerExperience),
-        Double(user.travelTime)
-      ]
-      return trainers
-        .map { ($0, cosine($0.featureVector(), userVec)) }
-        .sorted { $0.1 > $1.1 }
-        .map(\.0)
-    }
 
+    // MARK: – рекомендації для конкретного користувача
+    func recommended(for user: User) -> [Trainer] {
+        let allTrainers = trainers  // вже підвантажено в load()
+
+        // 1) будуємо нормалізатор на основі всіх векторів
+        let allVectors = allTrainers.map { $0.featureVector() }
+        let normalizer = FeatureNormalizer(vectors: allVectors)
+
+        // 2) нормалізуємо вектор користувача
+        let userVecNorm = normalizer.normalize(user.expectationVector())
+
+        // 3) порахуємо косинусну схожість
+        let scored: [(Trainer, Double)] = allTrainers.map { trainer in
+            let tNorm = normalizer.normalize(trainer.featureVector())
+            let score = normalizer.cosineSimilarity(tNorm, userVecNorm)
+            return (trainer, score)
+        }
+
+        // 4) фільтруємо й сортуємо
+        return scored
+            .filter { $0.1 > 0 }            // прибираємо “порожніх”
+            .sorted { $0.1 > $1.1 }         // за спаданням score
+            .map { $0.0 }                   // лишаємо тільки Trainer
+    }
 }

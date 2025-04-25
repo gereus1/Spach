@@ -48,6 +48,7 @@ struct LoginView: View {
 
     private func authenticate() {
         let realm = try! Realm()
+        print("🔍 Realm file path →", Realm.Configuration.defaultConfiguration.fileURL!.path)
         if let u = realm.objects(User.self)
                      .first(where: { $0.email == email && $0.passwordHash == password }) {
             userRole     = "user"
