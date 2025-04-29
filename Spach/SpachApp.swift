@@ -6,6 +6,7 @@ struct SpachApp: SwiftUI.App {
     @AppStorage("isLoggedIn")   private var isLoggedIn   = false
     @AppStorage("userRole")     private var userRole     = ""
     @AppStorage("currentEmail") private var currentEmail = ""
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
 
     init() {
         // Конфігурація Realm з міграцією
@@ -43,12 +44,17 @@ struct SpachApp: SwiftUI.App {
         }
 
         Realm.Configuration.defaultConfiguration = finalConfig
+        
+        UserDefaults.standard.set(false, forKey: "hasSeenOnboarding")
+        
     }
 
     var body: some Scene {
         WindowGroup {
-            if isLoggedIn {
-                if userRole == "trainer" {
+        if !hasSeenOnboarding {
+                    OnboardingView()
+                } else if isLoggedIn {
+                    if userRole == "trainer" {
                     TrainerHomeView()
                 } else {
                     MainTabView()
