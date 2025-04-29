@@ -1,11 +1,3 @@
-//
-//  Trainer.swift
-//  
-//
-//  Created by Andrew Valivaha on 22.04.2025.
-//
-
-
 import RealmSwift
 
 class Trainer: Object, Identifiable {
@@ -16,7 +8,7 @@ class Trainer: Object, Identifiable {
     @Persisted var surname: String = ""
     @Persisted var age: Int = 0
     @Persisted var experience: Int = 0
-    @Persisted var travelTime: Double = 0.0
+    @Persisted var districts: List<District>
     @Persisted var languages: List<String>
     @Persisted var worksWithChildren: Bool = false
     @Persisted var hasCertificates: Bool = false

@@ -1,13 +1,14 @@
 import SwiftUI
 import Kingfisher
 
-struct TrainerDetailView: View {
-    let trainer: Trainer
+struct UserDetailView: View {
+    let user: User
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                if let urlString = trainer.avatarURL,
+                // Аватар користувача
+                if let urlString = user.avatarURL,
                    let url = URL(string: urlString) {
                     KFImage(url)
                         .resizable()
@@ -24,26 +25,27 @@ struct TrainerDetailView: View {
 
                 // Основна інформація
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Email: \(trainer.email)")
-                    Text("Вік: \(trainer.age) р.")
-                    Text("Досвід: \(trainer.experience) р.")
-                    Text("Рейтинг: \(trainer.rating, specifier: "%.1f")")
-                    Text("Ціна за сесію: \(trainer.pricePerSession, specifier: "%.0f")₴")
-                    Text("Райони роботи: \(trainer.districts.map { $0.rawValue }.joined(separator: ", "))")
-                    Text("Мови: \(trainer.languages.joined(separator: ", "))")
+                    Text("Email: \(user.email)")
+                    Text("Вік: \(user.age) р.")
+                    Text("Очікуваний досвід тренера: \(user.expectedTrainerExperience) р.")
+                    Text("Рейтинг: \(user.rating, specifier: "%.1f")")
+                    Text("Ціна за сесію: \(user.pricePerSession, specifier: "%.0f")₴")
+                    Text("Роки в категорії: \(user.yearsInCategory)")
+                    Text("Райони проживання: \(user.districts.map { $0.rawValue }.joined(separator: ", "))")
+                    Text("Мови: \(user.languages.joined(separator: ", "))")
                 }
                 .font(.body)
 
                 // Додаткові параметри
-                Toggle("Працює з дітьми", isOn: .constant(trainer.worksWithChildren))
+                Toggle("Працює з дітьми", isOn: .constant(user.worksWithChildren))
                     .toggleStyle(SwitchToggleStyle())
-                Toggle("Має сертифікати", isOn: .constant(trainer.hasCertificates))
+                Toggle("Має сертифікати", isOn: .constant(user.hasCertificates))
                     .toggleStyle(SwitchToggleStyle())
 
                 Spacer()
             }
             .padding()
         }
-        .navigationTitle("Профіль тренера")
+        .navigationTitle("Профіль користувача")
     }
 }

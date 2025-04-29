@@ -3,8 +3,11 @@ import SwiftUI
 struct UserHomeView: View {
     var body: some View {
         TabView {
-            TrainerListView()
-                .tabItem { Label("Тренери", systemImage: "person.3") }
+            RecommendationsView()
+              .tabItem {
+                Label("Рекомендації", systemImage: "star.fill")
+              }
+
             UserProfileView()
                 .tabItem { Label("Профіль", systemImage: "person.circle") }
         }

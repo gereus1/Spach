@@ -1,4 +1,5 @@
 import SwiftUI
+import RealmSwift
 
 struct UserProfileView: View {
     @AppStorage("currentEmail") private var currentEmail = ""
@@ -12,12 +13,20 @@ struct UserProfileView: View {
                 Text("Вік: \(u.age) р.")
                 Text("Досвід тренера: \(u.expectedTrainerExperience) р.")
                 Text("Рейтинг: \(u.rating, specifier: "%.1f")")
-                Text("Ціна за сесію: \(u.pricePerSession, specifier: "%.0f")$")
+                Text("Ціна за сесію: \(u.pricePerSession, specifier: "%.0f")₴")
                 Text("Роки в категорії: \(u.yearsInCategory)")
-                Text("Час у дорозі: \(u.travelTime, specifier: "%.0f") хв")
-                Text("Мови: \(u.languages.joined(separator: ", "))")
+
+                // і тут теж:
+                Text("Райони у яких може отримувати послуги: " +
+                     u.districts.map { $0.rawValue }
+                                 .joined(separator: ", "))
+
+                Text("Мови: " +
+                     Array(u.languages)
+                        .joined(separator: ", "))
+
                 Toggle("Працює з дітьми", isOn: .constant(u.worksWithChildren))
-                Toggle("Є сертифікати", isOn: .constant(u.hasCertificates))
+                Toggle("Є сертифікати",    isOn: .constant(u.hasCertificates))
             } else {
                 Text("Завантаження…")
             }
@@ -28,6 +37,8 @@ struct UserProfileView: View {
             .foregroundColor(.red)
         }
         .padding()
-        .onAppear { user = service.fetchCurrentUser(email: currentEmail) }
+        .onAppear {
+            user = service.fetchCurrentUser(email: currentEmail)
+        }
     }
 }

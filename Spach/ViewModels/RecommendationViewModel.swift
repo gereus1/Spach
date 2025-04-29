@@ -1,39 +1,39 @@
 // ViewModels/RecommendationViewModel.swift
-import SwiftUI       // для ObservableObject, @Published
-import RealmSwift    // для Realm(), Object тощо
+import Foundation
+import RealmSwift
 
+/// Відповідає за обчислення та завантаження відсортованого за cosine-similarity списку тренерів
 class RecommendationViewModel: ObservableObject {
-  @Published var recommendations: [Trainer] = []
+    @Published var recommendations: [Trainer] = []
+    private let service = RealmService()
 
-  private let service = RealmService()
-  private let normalizer: FeatureNormalizer
+    /// Будує нормалізатор на всіх векторах (тренери + користувач),
+    /// рахує cosine-similarity і зберігає відсортований список
+    func loadRecommendations(for user: User) {
+        let trainers = Array(service.fetchTrainers())
+        // 1) беремо вектори всіх тренерів та додамо вектор очікувань користувача
+        let allVectors = trainers.map { $0.featureVector() } + [ user.expectationVector() ]
+        let normalizer = FeatureNormalizer(vectors: allVectors)
 
-  init() {
-    // збираємо всіх тренерів та готуємо нормалізатор на стартах
-    let trainers = Array(service.fetchTrainers())
-    let allVectors = trainers.map { $0.featureVector() }
-    normalizer = FeatureNormalizer(vectors: allVectors)
-  }
+        // 2) нормалізуємо вектор користувача
+        let userVecNorm = normalizer.normalize(user.expectationVector())
 
-  func loadRecommendations(for user: User) {
-    // якщо юзер не знайдений — вилітаємо
-    let trainers = Array(service.fetchTrainers())
+        // 3) для кожного тренера порахуємо score
+        let scored: [(Trainer, Double)] = trainers.map { trainer in
+            let tNorm = normalizer.normalize(trainer.featureVector())
+            let score = normalizer.cosineSimilarity(tNorm, userVecNorm)
+            return (trainer, score)
+        }
 
-    // нормалізований вектор очікувань користувача
-    let userVecNorm = normalizer.normalize(user.expectationVector())
+        // 4) відсортуємо за спаданням і викинемо нічийних (score == 0 за бажанням)
+        let sorted = scored
+            .filter { $0.1 > 0 }           // прибрати тренерів зі score == 0
+            .sorted  { $0.1 > $1.1 }       // сортування за спаданням score
+            .map     { $0.0 }              // беремо лише Trainer
 
-    // для кожного тренера обчислюємо схожість
-    let scored: [(Trainer, Double)] = trainers.map { trainer in
-      let tNorm = normalizer.normalize(trainer.featureVector())
-      // тут викликаємо correct ім’я:
-      let score = normalizer.cosineSimilarity(tNorm, userVecNorm)
-      return (trainer, score)
+        // 5) оновлюємо Published-масив
+        DispatchQueue.main.async {
+            self.recommendations = sorted
+        }
     }
-
-    // фільтруємо тих, у кого score > 0, сортуємо та беремо тільки Trainer
-    recommendations = scored
-      .filter { $0.1 > 0 }
-      .sorted { $0.1 > $1.1 }
-      .map { $0.0 }
-  }
 }

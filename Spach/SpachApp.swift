@@ -3,44 +3,59 @@ import RealmSwift
 
 @main
 struct SpachApp: SwiftUI.App {
-  @AppStorage("isLoggedIn")   private var isLoggedIn   = false
-  @AppStorage("userRole")     private var userRole     = ""
-  @AppStorage("currentEmail") private var currentEmail = ""
+    @AppStorage("isLoggedIn")   private var isLoggedIn   = false
+    @AppStorage("userRole")     private var userRole     = ""
+    @AppStorage("currentEmail") private var currentEmail = ""
 
-  init() {
-    // 1) Задаємо конфігурацію Realm
-    var config = Realm.Configuration(schemaVersion: 2,
-                                     deleteRealmIfMigrationNeeded: true)
+    init() {
+        // Конфігурація Realm з міграцією
+        let config: Realm.Configuration = Realm.Configuration(
+            schemaVersion: 3,  // Оновлено версію схеми
+            migrationBlock: { (migration: Migration, oldSchemaVersion: UInt64) in
+                if oldSchemaVersion < 3 {
+                    // Для User: додаємо дефолтний район
+                    migration.enumerateObjects(ofType: User.className()) { _, newObject in
+                        guard let list = newObject?["districts"] as? RealmSwift.List<String> else { return }
+                        list.append(District.shevchenkivskyi.rawValue)
+                    }
+                    // Для Trainer: додаємо дефолтний район
+                    migration.enumerateObjects(ofType: Trainer.className()) { _, newObject in
+                        guard let list = newObject?["districts"] as? RealmSwift.List<String> else { return }
+                        list.append(District.shevchenkivskyi.rawValue)
+                    }
+                }
+            },
+            deleteRealmIfMigrationNeeded: false  // Не видаляти БД при міграції
+        )
 
-    // 2) Замість .documents — беремо .applicationSupport
-    if let appSupportURL = FileManager.default
-        .urls(for: .applicationSupportDirectory, in: .userDomainMask)
-        .first
-    {
-      // створюємо папку, якщо нема
-      try? FileManager.default.createDirectory(
-        at: appSupportURL,
-        withIntermediateDirectories: true
-      )
-      config.fileURL = appSupportURL
-        .appendingPathComponent("default.realm")
-    }
-
-    // 3) Встановлюємо як default
-    Realm.Configuration.defaultConfiguration = config
-  }
-
-  var body: some Scene {
-    WindowGroup {
-      if isLoggedIn {
-        if userRole == "trainer" {
-          TrainerHomeView()
-        } else {
-          UserHomeView()
+        // Вказуємо збереження файлу в Application Support
+        var finalConfig = config
+        if let appSupportURL = FileManager.default
+            .urls(for: .applicationSupportDirectory, in: .userDomainMask)
+            .first
+        {
+            try? FileManager.default.createDirectory(
+                at: appSupportURL,
+                withIntermediateDirectories: true
+            )
+            finalConfig.fileURL = appSupportURL
+                .appendingPathComponent("default.realm")
         }
-      } else {
-        AuthRootView()
-      }
+
+        Realm.Configuration.defaultConfiguration = finalConfig
     }
-  }
+
+    var body: some Scene {
+        WindowGroup {
+            if isLoggedIn {
+                if userRole == "trainer" {
+                    TrainerHomeView()
+                } else {
+                    MainTabView()
+                }
+            } else {
+                AuthRootView()
+            }
+        }
+    }
 }

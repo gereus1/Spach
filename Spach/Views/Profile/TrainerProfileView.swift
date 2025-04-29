@@ -1,12 +1,5 @@
-//
-//  TrainerProfileView.swift
-//  Spach
-//
-//  Created by Andrew Valivaha on 21.04.2025.
-//
-
-
 import SwiftUI
+import RealmSwift
 
 struct TrainerProfileView: View {
     @AppStorage("currentEmail") private var currentEmail = ""
@@ -20,10 +13,18 @@ struct TrainerProfileView: View {
                 Text("Вік: \(t.age) р.")
                 Text("Досвід: \(t.experience) р.")
                 Text("Рейтинг: \(t.rating, specifier: "%.1f")")
-                Text("Ціна за сесію: \(t.pricePerSession, specifier: "%.0f")$")
+                Text("Ціна за сесію: \(t.pricePerSession, specifier: "%.0f")₴")
                 Text("Роки в категорії: \(t.yearsInCategory)")
-                Text("Час у дорозі: \(t.travelTime, specifier: "%.0f") хв")
-                Text("Мови: \(t.languages.joined(separator: ", "))")
+
+                // правка тут:
+                Text("Райони у яких надає послуги: " +
+                     t.districts.map { $0.rawValue }
+                                .joined(separator: ", "))
+
+                Text("Мови: " +
+                     t.languages.map { String($0) }
+                                .joined(separator: ", "))
+
                 Toggle("Працює з дітьми", isOn: .constant(t.worksWithChildren))
                 Toggle("Є сертифікати",   isOn: .constant(t.hasCertificates))
             } else {
@@ -36,6 +37,8 @@ struct TrainerProfileView: View {
             .foregroundColor(.red)
         }
         .padding()
-        .onAppear { trainer = service.fetchCurrentTrainer(email: currentEmail) }
+        .onAppear {
+            trainer = service.fetchCurrentTrainer(email: currentEmail)
+        }
     }
 }
