@@ -25,17 +25,38 @@ struct RecommendationsView: View {
                     TrainerDetailView(trainer: trainer)
                 } label: {
                     HStack(spacing: 12) {
-                        if let urlString = trainer.avatarURL,
-                           let url = URL(string: urlString) {
+                        if let data = trainer.avatarData {
+                            #if os(iOS)
+                            if let uiImage = UIImage(data: data) {
+                                Image(uiImage: uiImage)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 40, height: 40)
+                                    .clipShape(Circle())
+                            }
+                            #else
+                            if let nsImage = NSImage(data: data) {
+                                Image(nsImage: nsImage)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 40, height: 40)
+                                    .clipShape(Circle())
+                            }
+                            #endif
+                        } else if let urlString = trainer.avatarURL,
+                                  let url = URL(string: urlString) {
                             KFImage(url)
                                 .resizable()
+                                .scaledToFill()
                                 .frame(width: 40, height: 40)
                                 .clipShape(Circle())
                         } else {
                             Image(systemName: "person.circle.fill")
                                 .resizable()
+                                .scaledToFill()
                                 .frame(width: 40, height: 40)
                                 .foregroundColor(.gray)
+                                .clipShape(Circle())
                         }
 
                         VStack(alignment: .leading, spacing: 4) {

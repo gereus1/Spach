@@ -1,8 +1,8 @@
 import SwiftUI
 
-struct CardContainer<Content: View>: View {
+struct GlassCard<Content: View>: View {
     let content: Content
-    init(@ViewBuilder content: ()->Content) {
+    init(@ViewBuilder content: () -> Content) {
         self.content = content()
     }
 
@@ -13,7 +13,6 @@ struct CardContainer<Content: View>: View {
         .padding()
         .background(.ultraThinMaterial)
         .cornerRadius(20)
-        .shadow(radius: 10)
-        .padding(.horizontal)
+        .shadow(radius: 5)
     }
 }

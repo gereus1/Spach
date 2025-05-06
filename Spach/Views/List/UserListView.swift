@@ -8,12 +8,7 @@ struct UserListView: View {
         NavigationView {
             List(users) { u in
                 NavigationLink(destination: UserDetailView(user: u)) {
-                    HStack {
-                        Text(u.email)
-                        Spacer()
-                        Text("\(u.expectedTrainerExperience) р.")
-                    }
-                    .padding(.vertical, 4)
+                    UserRowView(user: u)
                 }
             }
             .navigationTitle("Запити клієнтів")

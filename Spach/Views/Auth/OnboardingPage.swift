@@ -25,51 +25,53 @@ struct OnboardingView: View {
     ]
 
     var body: some View {
-        VStack {
-            TabView(selection: $currentPage) {
-                ForEach(Array(pages.enumerated()), id: \.element.id) { index, page in
-                    VStack(spacing: 24) {
-                        Image(page.imageName)
-                            .renderingMode(.original)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 250)
+        ZStack {
+            // MARK: Background gradient
+            LinearGradient(
+                gradient: Gradient(colors: [Color.blue.opacity(0.25), Color.purple.opacity(0.25)]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
 
-                        Text(page.title)
-                            .font(.title)
-                            .bold()
-                        Text(page.description)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
+            VStack {
+                // MARK: Pages as cards
+                TabView(selection: $currentPage) {
+                    ForEach(Array(pages.enumerated()), id: \.element.id) { index, page in
+                        OnboardingCard(page: page)
+                            .tag(index)
                     }
-                    .tag(index)
                 }
-            }
-            #if os(iOS)
-            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .always))
-            #endif
+                #if os(iOS)
+                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                #endif
+                .frame(maxWidth: 500, maxHeight: 550)
 
-            Spacer()
+                // MARK: Custom page indicator
+                PageIndicator(numberOfPages: pages.count, currentPage: $currentPage)
 
-            HStack {
-                if currentPage < pages.count - 1 {
-                    Button("Пропустити") {
-                        finishOnboarding()
-                    }
-                    Spacer()
-                    Button("Далі") {
-                        withAnimation {
-                            currentPage += 1
+                // MARK: Controls
+                HStack {
+                    if currentPage < pages.count - 1 {
+                        Button("Пропустити", action: finishOnboarding)
+                            .buttonStyle(.plain)
+
+                        Spacer()
+
+                        Button("Далі") {
+                            withAnimation { currentPage += 1 }
                         }
+                        .buttonStyle(.borderedProminent)
+                    } else {
+                        Button("Почати", action: finishOnboarding)
+                            .buttonStyle(.borderedProminent)
+                            .frame(maxWidth: .infinity)
                     }
-                } else {
-                    Button("Почати") {
-                        finishOnboarding()
-                    }
-                    .frame(maxWidth: .infinity)
                 }
+                .padding(.horizontal, 40)
+                .padding(.top, 20)
             }
-            .padding()
+            .padding(.vertical, 50)
         }
     }
 
@@ -78,10 +80,54 @@ struct OnboardingView: View {
     }
 }
 
+struct OnboardingCard: View {
+    let page: OnboardingPage
+
+    var body: some View {
+        VStack(spacing: 24) {
+            Image(page.imageName)
+                .resizable()
+                .scaledToFit()
+                .frame(height: 280)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .shadow(radius: 8)
+
+            Text(page.title)
+                .font(.title2).fontWeight(.semibold)
+
+            Text(page.description)
+                .font(.body)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 30)
+        }
+        .padding()
+        .background(.ultraThinMaterial)
+        .cornerRadius(20)
+        .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: 6)
+    }
+}
+
+struct PageIndicator: View {
+    let numberOfPages: Int
+    @Binding var currentPage: Int
+
+    var body: some View {
+        HStack(spacing: 10) {
+            ForEach(0..<numberOfPages, id: \.self) { idx in
+                Circle()
+                    .fill(idx == currentPage ? Color.accentColor : Color.gray.opacity(0.5))
+                    .frame(width: 8, height: 8)
+            }
+        }
+        .padding(.vertical, 12)
+    }
+}
+
 #if DEBUG
 struct OnboardingView_Previews: PreviewProvider {
     static var previews: some View {
         OnboardingView()
+            .frame(width: 600, height: 700)
     }
 }
 #endif

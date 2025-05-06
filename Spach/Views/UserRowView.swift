@@ -1,36 +1,29 @@
 import SwiftUI
-import Kingfisher
 
-struct TrainerRowView: View {
-    let trainer: Trainer
+struct UserRowView: View {
+    let user: User
 
     var body: some View {
         HStack(spacing: 12) {
-            if let data = trainer.avatarData {
+            // 1. Локальний аватар
+            if let data = user.avatarData {
                 #if os(iOS)
-                if let uiImage = UIImage(data: data) {
-                    Image(uiImage: uiImage)
+                if let ui = UIImage(data: data) {
+                    Image(uiImage: ui)
                         .resizable()
                         .scaledToFill()
                         .frame(width: 40, height: 40)
                         .clipShape(Circle())
                 }
                 #else
-                if let nsImage = NSImage(data: data) {
-                    Image(nsImage: nsImage)
+                if let ns = NSImage(data: data) {
+                    Image(nsImage: ns)
                         .resizable()
                         .scaledToFill()
                         .frame(width: 40, height: 40)
                         .clipShape(Circle())
                 }
                 #endif
-            } else if let urlString = trainer.avatarURL,
-                      let url = URL(string: urlString) {
-                KFImage(url)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 40, height: 40)
-                    .clipShape(Circle())
             } else {
                 Image(systemName: "person.circle.fill")
                     .resizable()
@@ -41,9 +34,9 @@ struct TrainerRowView: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(trainer.email)
+                Text(user.email)
                     .font(.body)
-                Text("Рейтинг: \(trainer.rating, specifier: "%.1f")")
+                Text("Досвід: \(user.expectedTrainerExperience) р.")
                     .font(.subheadline)
                     .foregroundColor(.gray)
             }

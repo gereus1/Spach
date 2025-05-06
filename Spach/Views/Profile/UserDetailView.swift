@@ -1,80 +1,117 @@
 import SwiftUI
 import Kingfisher
 
+#if os(iOS)
+import UIKit
+#elseif os(macOS)
+import AppKit
+#endif
+
 struct UserDetailView: View {
     let user: User
+
+    /// Picks the appropriate system background for cards on each platform
+    private var cardBackground: Color {
+        #if os(macOS)
+        Color(nsColor: .windowBackgroundColor)
+        #else
+        Color(uiColor: .systemBackground)
+        #endif
+    }
 
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                // АВАТАР
-                Group {
-                    if let data = user.avatarData {
-                        #if os(iOS)
-                        if let ui = UIImage(data: data) {
-                            Image(uiImage: ui)
-                                .resizable()
-                                .scaledToFill()
-                                .clipShape(Circle())
-                                .frame(width: 200, height: 200)
+                
+                // MARK: — Avatar
+                HStack {
+                    Spacer()
+                    Group {
+                        // 1️⃣ Local Realm data
+                        if let data = user.avatarData {
+                            #if os(iOS)
+                            if let ui = UIImage(data: data) {
+                                Image(uiImage: ui).resizable()
+                            }
+                            #elseif os(macOS)
+                            if let ns = NSImage(data: data) {
+                                Image(nsImage: ns).resizable()
+                            }
+                            #endif
                         }
-                        #else
-                        if let ns = NSImage(data: data) {
-                            Image(nsImage: ns)
-                                .resizable()
-                                .scaledToFill()
-                                .clipShape(Circle())
-                                .frame(width: 200, height: 200)
+                        // 2️⃣ Remote URL via Kingfisher
+                        else if let urlString = user.avatarURL,
+                                let url = URL(string: urlString) {
+                            KFImage(url).resizable()
                         }
-                        #endif
-                    } else if let urlString = user.avatarURL,
-                              let url = URL(string: urlString) {
-                        KFImage(url)
-                            .resizable()
-                            .scaledToFill()
-                            .clipShape(Circle())
-                            .frame(width: 200, height: 200)
-                    } else {
-                        Image(systemName: "person.crop.circle.fill")
-                            .resizable()
-                            .scaledToFit()
-                            .foregroundColor(.gray)
-                            .frame(width: 200, height: 200)
+                        // 3️⃣ Placeholder
+                        else {
+                            Image(systemName: "person.crop.circle.fill")
+                                .resizable()
+                                .foregroundColor(.gray)
+                        }
                     }
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: 200, height: 200)
+                    .clipShape(Circle())
+                    .shadow(radius: 6)
+                    Spacer()
                 }
-                .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.top, 16)
 
-                // ОСНОВНА ІНФОРМАЦІЯ
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Email: \(user.email)")
-                    Text("Вік: \(user.age) р.")
-                    Text("Очікуваний досвід тренера: \(user.expectedTrainerExperience) р.")
-                    Text("Рейтинг: \(user.rating, specifier: "%.1f")")
-                    Text("Ціна за сесію: \(user.pricePerSession, specifier: "%.0f")₴")
-                    Text("Роки в категорії: \(user.yearsInCategory)")
-                    Text("Райони проживання: \(user.districts.map { $0.rawValue }.joined(separator: ", "))")
-                    Text("Мови: \(user.languages.joined(separator: ", "))")
+                // MARK: — Основна інформація
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Основна інформація")
+                        .font(.title2).bold()
+                        .padding(.bottom, 4)
+
+                    Group {
+                        Label("Email: \(user.email)", systemImage: "envelope")
+                        Label("Ім’я: \(user.name)", systemImage: "person.circle")
+                        Label("Прізвище: \(user.surname)", systemImage: "person.circle.fill")
+                        Label("Вік: \(user.age) р.", systemImage: "calendar")
+                        Label("Очікуваний досвід тренера: \(user.expectedTrainerExperience) р.", systemImage: "figure.walk")
+                        Label("Рейтинг: \(user.rating, specifier: "%.1f")", systemImage: "star.fill")
+                        Label("Ціна за сесію: \(user.pricePerSession, specifier: "%.0f")₴", systemImage: "creditcard")
+                        Label("Роки в категорії: \(user.yearsInCategory)", systemImage: "clock")
+                        Label("Райони проживання: \(user.districts.map { $0.rawValue }.joined(separator: ", "))", systemImage: "map")
+                        Label("Мови: \(user.languages.joined(separator: ", "))", systemImage: "globe")
+                    }
+                    .font(.body)
                 }
-                .font(.body)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal)
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(cardBackground)
+                )
+                .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
 
-                // ДОДАТКОВІ ПАРАМЕТРИ
-                Toggle("Працює з дітьми", isOn: .constant(user.worksWithChildren))
-                    .toggleStyle(SwitchToggleStyle())
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal)
+                // MARK: — Додаткові параметри
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Додатково")
+                        .font(.title2).bold()
+                        .padding(.bottom, 4)
 
-                Toggle("Має сертифікати", isOn: .constant(user.hasCertificates))
+                    HStack {
+                        Toggle("Працює з дітьми", isOn: .constant(user.worksWithChildren))
+                        Toggle("Має сертифікати", isOn: .constant(user.hasCertificates))
+                    }
                     .toggleStyle(SwitchToggleStyle())
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal)
+                }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(cardBackground)
+                )
+                .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
 
                 Spacer(minLength: 20)
             }
-            .padding(.bottom, 20)
+            .padding()
+            #if os(macOS)
+            .frame(maxWidth: 600)
+            #endif
+            .navigationTitle("Профіль користувача")
         }
-        .navigationTitle("Профіль користувача")
     }
 }

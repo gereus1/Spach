@@ -1,11 +1,11 @@
 import SwiftUI
 
 struct TrainerListView: View {
-  @StateObject private var vm = TrainerListViewModel()
+  @StateObject private var vm = RecommendationViewModel()
 
   var body: some View {
     NavigationView {
-      List(vm.trainers) { trainer in
+        List(vm.recommendations) { trainer in
         NavigationLink(destination: TrainerDetailView(trainer: trainer)) {
           TrainerRowView(trainer: trainer)
         }

@@ -1,5 +1,3 @@
-// TrainerProfileView.swift
-
 import SwiftUI
 import RealmSwift
 
@@ -7,103 +5,113 @@ struct TrainerProfileView: View {
     @AppStorage("currentEmail") private var currentEmail = ""
     @State private var trainer: Trainer?
     @State private var isEditing = false
+    @State private var refreshTrigger = false
+
     private let service = RealmService()
 
     var body: some View {
-        NavigationStack {
-            ScrollView(.vertical, showsIndicators: true) {
-                VStack(alignment: .center, spacing: 16) {
-                    if let t = trainer {
-                        // АВАТАР
-                        Group {
-                            if let data = t.avatarData {
-                                #if os(iOS)
-                                if let ui = UIImage(data: data) {
-                                    Image(uiImage: ui)
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 120, height: 120)
-                                        .clipShape(Circle())
-                                        .clipped()
-                                }
-                                #else
-                                if let ns = NSImage(data: data) {
-                                    Image(nsImage: ns)
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 120, height: 120)
-                                        .clipShape(Circle())
-                                        .clipped()
-                                }
-                                #endif
-                            }
+        ScrollView {
+            VStack(spacing: 24) {
+                if let t = trainer {
+                    // Аватар
+                    if let data = t.avatarData {
+                        #if os(iOS)
+                        if let ui = UIImage(data: data) {
+                            Image(uiImage: ui)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 120, height: 120)
+                                .clipShape(Circle())
+                                .shadow(radius: 8)
                         }
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.top, 16)
-
-                        // ОСНОВНА ІНФОРМАЦІЯ
-                        Group {
-                            Text("Email: \(t.email)")
-                            Text("Імʼя: \(t.name)")
-                            Text("Вік: \(t.age, specifier: "%.0f") р.")
-                            Text("Досвід: \(t.experience, specifier: "%.0f") р.")
-                            Text("Рейтинг: \(t.rating, specifier: "%.1f")")
-                            Text("Ціна за сесію: \(t.pricePerSession, specifier: "%.0f")₴")
-                            Text("Роки в категорії: \(t.yearsInCategory)")
-                            Text("Райони у яких надає послуги: " +
-                                 t.district.map { $0.rawValue }.joined(separator: ", "))
-                            Text("Мови: " +
-                                 t.languages.joined(separator: ", "))
+                        #else
+                        if let ns = NSImage(data: data) {
+                            Image(nsImage: ns)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 120, height: 120)
+                                .clipShape(Circle())
+                                .shadow(radius: 8)
                         }
-                        .multilineTextAlignment(.center)
-
-                        // ДОДАТКОВІ ПАРАМЕТРИ
-                        Toggle("Працює з дітьми", isOn: .constant(t.worksWithChildren))
-                            .toggleStyle(SwitchToggleStyle())
-                            .frame(maxWidth: .infinity, alignment: .center)
-                        Toggle("Є сертифікати", isOn: .constant(t.hasCertificates))
-                            .toggleStyle(SwitchToggleStyle())
-                            .frame(maxWidth: .infinity, alignment: .center)
-                    } else {
-                        Text("Завантаження…")
-                            .frame(maxWidth: .infinity, alignment: .center)
-                            .padding(.top, 40)
+                        #endif
                     }
 
-                    Spacer(minLength: 20)
+                    // Імʼя та пошта
+                    Text(t.name + " " + t.surname)
+                        .font(.title2.bold())
 
-                    // Кнопка ВИЙТИ
-                    Button("Вийти") {
-                        UserDefaults.standard.set(false, forKey: "isLoggedIn")
+                    Text(t.email)
+                        .foregroundColor(.secondary)
+
+                    Divider()
+
+                    // Основна інформація
+                    GroupBox(label: Label("Інформація", systemImage: "person.fill")) {
+                        ProfileRow(title: "Вік", value: "\(t.age) р.")
+                        ProfileRow(title: "Досвід", value: "\(t.experience) р.")
+                        ProfileRow(title: "Рейтинг", value: String(format: "%.1f", t.rating))
+                        ProfileRow(title: "Ціна за сесію", value: "\(Int(t.pricePerSession))₴")
+                        ProfileRow(title: "Роки в категорії", value: "\(t.yearsInCategory)")
                     }
-                    .foregroundColor(.red)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.bottom, 16)
-                }
-                .padding(.horizontal)
-            }
-            .navigationTitle("Профіль тренера")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Редагувати") {
-                        isEditing = true
+
+                    // Послуги
+                    GroupBox(label: Label("Послуги", systemImage: "globe")) {
+                        ProfileRow(title: "Райони", value: t.districts.map { $0.rawValue }.joined(separator: ", "))
+                        ProfileRow(title: "Мови", value: t.languages.joined(separator: ", "))
+                        Toggle("Працює з дітьми", isOn: .constant(t.worksWithChildren)).disabled(true)
+                        Toggle("Є сертифікати", isOn: .constant(t.hasCertificates)).disabled(true)
                     }
+
+                    // Кнопки
+                    HStack(spacing: 16) {
+                        Button("Редагувати") {
+                            isEditing = true
+                        }
+                        .buttonStyle(.bordered)
+
+                        Button("Вийти") {
+                            UserDefaults.standard.set(false, forKey: "isLoggedIn")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.red)
+                    }
+                    .padding(.top, 20)
+
+                } else {
+                    ProgressView("Завантаження…")
+                        .padding(.top, 40)
                 }
             }
-            .sheet(isPresented: $isEditing, onDismiss: reloadTrainer) {
-                // force‐unwrap, бо isEditing = true лише коли trainer != nil
-                EditTrainerProfileView(trainer: trainer!)
+            .padding()
+            .frame(maxWidth: 500)
+            .frame(maxWidth: .infinity)
+        }
+        .onAppear {
+            trainer = service.fetchCurrentTrainer(email: currentEmail)
+        }
+        .sheet(isPresented: $isEditing) {
+            if let trainer = trainer {
+                EditTrainerProfileView(trainer: trainer, refreshTrigger: $refreshTrigger)
             }
         }
-        .onAppear(perform: loadTrainer)
+        .onChange(of: refreshTrigger) {
+            trainer = service.fetchCurrentTrainer(email: currentEmail)
+        }
     }
+}
 
-    private func loadTrainer() {
-        trainer = service.fetchCurrentTrainer(email: currentEmail)
-    }
+// Підтримка стрічки профілю
+private struct ProfileRow: View {
+    let title: String
+    let value: String
 
-    private func reloadTrainer() {
-        if let t = trainer { currentEmail = t.email }
-        loadTrainer()
+    var body: some View {
+        HStack {
+            Text(title)
+                .foregroundColor(.secondary)
+            Spacer()
+            Text(value)
+        }
+        .padding(.vertical, 4)
     }
 }
