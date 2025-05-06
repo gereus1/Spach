@@ -26,6 +26,23 @@ final class RealmService {
         try! realm.write { realm.add(object) }
     }
     
+    func updateTrainer(_ trainer: Trainer,
+                           block: (Trainer) -> Void) {
+            let realm = try! Realm()
+            try! realm.write {
+                block(trainer)
+            }
+        }
+
+        func updateUser(_ user: User,
+                        block: (User) -> Void) {
+            let realm = try! Realm()
+            try! realm.write {
+                block(user)
+            }
+        }
+    }
+    
     func addReview(user: User, trainer: Trainer, score: Double) {
       let realm = try! Realm()
       let r = Review()
@@ -42,5 +59,3 @@ final class RealmService {
         trainer.rating = all.reduce(0, +) / Double(all.count)
       }
     }
-
-}

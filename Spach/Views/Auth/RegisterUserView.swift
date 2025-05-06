@@ -1,7 +1,10 @@
+// RegisterUserView.swift
+
 import SwiftUI
 import RealmSwift
 
 struct RegisterUserView: View {
+    // MARK: — Поля реєстрації
     @State private var email                   = ""
     @State private var password                = ""
     @State private var age                     = 25.0
@@ -12,8 +15,12 @@ struct RegisterUserView: View {
     @State private var languagesText           = ""
     @State private var worksWithChildren       = false
     @State private var hasCertificates         = false
-    @State private var showAlert               = false
 
+    // MARK: — Аватар
+    @State private var avatarImage: PlatformImage? = nil
+    @State private var showImagePicker = false
+
+    @State private var showAlert = false
     @AppStorage("isLoggedIn")   private var isLoggedIn   = false
     @AppStorage("userRole")     private var userRole     = ""
     @AppStorage("currentEmail") private var currentEmail = ""
@@ -33,10 +40,39 @@ struct RegisterUserView: View {
                         .font(.largeTitle).bold()
                         .foregroundColor(.white)
 
+                    // — Аватар
+                    VStack {
+                        if let img = avatarImage {
+                            #if os(iOS)
+                            Image(uiImage: img)
+                                .resizable()
+                                .clipShape(Circle())
+                                .frame(width: 100, height: 100)
+                            #else
+                            Image(nsImage: img)
+                                .resizable()
+                                .clipShape(Circle())
+                                .frame(width: 100, height: 100)
+                            #endif
+                        } else {
+                            Circle()
+                                .fill(Color.gray.opacity(0.3))
+                                .frame(width: 100, height: 100)
+                                .overlay(
+                                    Image(systemName: "camera.fill")
+                                        .foregroundColor(.white)
+                                        .font(.largeTitle)
+                                )
+                        }
+                        Button("Обрати аватар") {
+                            showImagePicker = true
+                        }
+                    }
+                    .padding(.top, 20)
+
                     CardContainer {
                         IconTextField(icon: "envelope.fill", placeholder: "Email", text: $email)
                         IconSecureField(icon: "lock.fill", placeholder: "Пароль", text: $password)
-
                         LabeledSlider(title: "Вік", value: $age, range: 10...100)
                         LabeledSlider(title: "Exp (р)", value: $experience, range: 0...50)
 
@@ -45,11 +81,8 @@ struct RegisterUserView: View {
                                 Toggle(district.rawValue, isOn: Binding(
                                     get: { selectedDistricts.contains(district) },
                                     set: { isOn in
-                                        if isOn {
-                                            selectedDistricts.append(district)
-                                        } else {
-                                            selectedDistricts.removeAll { $0 == district }
-                                        }
+                                        if isOn { selectedDistricts.append(district) }
+                                        else   { selectedDistricts.removeAll { $0 == district } }
                                     }
                                 ))
                             }
@@ -78,10 +111,12 @@ struct RegisterUserView: View {
                 .padding(.top, 40)
             }
         }
+        .sheet(isPresented: $showImagePicker) {
+            ImagePicker(image: $avatarImage)
+        }
     }
 
     private func registerUser() {
-        ensureRealmFolderExists()
         let realm = try! Realm()
         let u = User()
         u.email                     = email
@@ -89,10 +124,20 @@ struct RegisterUserView: View {
         u.age                       = Int(age)
         u.expectedTrainerExperience = Int(experience)
 
-        // Зберігаємо обрані райони
+        if let img = avatarImage {
+            #if os(iOS)
+            u.avatarData = img.jpegData(compressionQuality: 0.8)
+            #else
+            if let tiff = img.tiffRepresentation,
+               let rep  = NSBitmapImageRep(data: tiff),
+               let data = rep.representation(using: .jpeg, properties: [:]) {
+                u.avatarData = data
+            }
+            #endif
+        }
+
         u.districts.removeAll()
         u.districts.append(objectsIn: selectedDistricts)
-
         u.pricePerSession = Double(pricePerSession)
         u.yearsInCategory = yearsInCategory
 
@@ -105,7 +150,6 @@ struct RegisterUserView: View {
         u.hasCertificates   = hasCertificates
 
         try! realm.write { realm.add(u) }
-
         userRole     = "user"
         currentEmail = u.email
         showAlert    = true

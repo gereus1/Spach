@@ -3,58 +3,66 @@ import RealmSwift
 
 @main
 struct SpachApp: SwiftUI.App {
-    @AppStorage("isLoggedIn")   private var isLoggedIn   = false
-    @AppStorage("userRole")     private var userRole     = ""
-    @AppStorage("currentEmail") private var currentEmail = ""
-    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+    @AppStorage("isLoggedIn")          private var isLoggedIn        = false
+    @AppStorage("userRole")            private var userRole          = ""
+    @AppStorage("currentEmail")        private var currentEmail      = ""
+    @AppStorage("hasSeenOnboarding")   private var hasSeenOnboarding = false
 
     init() {
-        // Конфігурація Realm з міграцією
-        let config: Realm.Configuration = Realm.Configuration(
-            schemaVersion: 3,  // Оновлено версію схеми
-            migrationBlock: { (migration: Migration, oldSchemaVersion: UInt64) in
-                if oldSchemaVersion < 3 {
-                    // Для User: додаємо дефолтний район
-                    migration.enumerateObjects(ofType: User.className()) { _, newObject in
-                        guard let list = newObject?["districts"] as? RealmSwift.List<String> else { return }
-                        list.append(District.shevchenkivskyi.rawValue)
-                    }
-                    // Для Trainer: додаємо дефолтний район
-                    migration.enumerateObjects(ofType: Trainer.className()) { _, newObject in
-                        guard let list = newObject?["districts"] as? RealmSwift.List<String> else { return }
-                        list.append(District.shevchenkivskyi.rawValue)
-                    }
+        // 1) Піднімаємо версію схеми — тепер 4
+        let config = Realm.Configuration(
+            schemaVersion: 4,
+            migrationBlock: { migration, oldVersion in
+                guard oldVersion < 4 else { return }
+
+                // — Міграція для districts
+                migration.enumerateObjects(ofType: User.className()) { _, newObject in
+                    guard let list = newObject?["districts"] as? RealmSwift.List<String> else { return }
+                    list.append(District.shevchenkivskyi.rawValue)
+                }
+                // Для Trainer: додаємо дефолтний район
+                migration.enumerateObjects(ofType: Trainer.className()) { _, newObject in
+                    guard let list = newObject?["districts"] as? RealmSwift.List<String> else { return }
+                    list.append(District.shevchenkivskyi.rawValue)
+                }
+
+                // — Міграція для avatarData: явно встановлюємо nil для старих записів
+                migration.enumerateObjects(ofType: User.className()) { _, newObject in
+                    newObject?["avatarData"] = nil
+                }
+                migration.enumerateObjects(ofType: Trainer.className()) { _, newObject in
+                    newObject?["avatarData"] = nil
                 }
             },
-            deleteRealmIfMigrationNeeded: false  // Не видаляти БД при міграції
+            deleteRealmIfMigrationNeeded: false
         )
 
-        // Вказуємо збереження файлу в Application Support
+        // 2) Зберігаємо файл у Application Support
         var finalConfig = config
-        if let appSupportURL = FileManager.default
+        if let supportURL = FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)
             .first
         {
             try? FileManager.default.createDirectory(
-                at: appSupportURL,
+                at: supportURL,
                 withIntermediateDirectories: true
             )
-            finalConfig.fileURL = appSupportURL
+            finalConfig.fileURL = supportURL
                 .appendingPathComponent("default.realm")
         }
 
+        // 3) Застосовуємо конфігурацію
         Realm.Configuration.defaultConfiguration = finalConfig
-        
-        UserDefaults.standard.set(false, forKey: "hasSeenOnboarding")
-        
+
+        //UserDefaults.standard.set(false, forKey: "hasSeenOnboarding")
     }
 
     var body: some Scene {
         WindowGroup {
-        if !hasSeenOnboarding {
-                    OnboardingView()
-                } else if isLoggedIn {
-                    if userRole == "trainer" {
+            if !hasSeenOnboarding {
+                OnboardingView()
+            } else if isLoggedIn {
+                if userRole == "trainer" {
                     TrainerHomeView()
                 } else {
                     MainTabView()

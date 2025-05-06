@@ -30,7 +30,7 @@ struct OnboardingView: View {
                 ForEach(Array(pages.enumerated()), id: \.element.id) { index, page in
                     VStack(spacing: 24) {
                         Image(page.imageName)
-                            .renderingMode(.original)     // ← ось ця рядок
+                            .renderingMode(.original)
                             .resizable()
                             .scaledToFit()
                             .frame(height: 250)

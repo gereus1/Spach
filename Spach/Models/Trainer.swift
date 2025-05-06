@@ -1,4 +1,5 @@
 import RealmSwift
+import Foundation
 
 class Trainer: Object, Identifiable {
     @Persisted(primaryKey: true) var id: ObjectId
@@ -6,6 +7,8 @@ class Trainer: Object, Identifiable {
     @Persisted var passwordHash: String = ""
     @Persisted var name: String = ""
     @Persisted var surname: String = ""
+    @Persisted var avatarURL: String? = nil
+    @Persisted var avatarData: Data?
     @Persisted var age: Int = 0
     @Persisted var experience: Int = 0
     @Persisted var districts: List<District>
@@ -15,5 +18,4 @@ class Trainer: Object, Identifiable {
     @Persisted var rating: Double = 0.0
     @Persisted var pricePerSession: Double = 0.0
     @Persisted var yearsInCategory: Int = 0
-    @Persisted var avatarURL: String? = nil
 }
