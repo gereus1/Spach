@@ -7,6 +7,19 @@ final class RealmService {
     func fetchTrainers() -> Results<Trainer> {
         realm.objects(Trainer.self)
     }
+    
+    func fetchTrainer(byEmail email: String) -> Trainer? {
+        return realm.objects(Trainer.self).filter("email == %@", email).first
+    }
+    
+    func fetchUser(byEmail email: String) -> User? {
+        return realm.objects(User.self).filter("email == %@", email).first
+    }
+    
+    func fetchUser(byId idString: String) -> User? {
+        guard let objectId = try? ObjectId(string: idString) else { return nil }
+        return realm.object(ofType: User.self, forPrimaryKey: objectId)
+    }
 
     func fetchUsers() -> Results<User> {
         realm.objects(User.self)

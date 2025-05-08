@@ -13,6 +13,7 @@ class EditUserProfileViewModel: ObservableObject {
     @Published var hasCertificates: Bool
     @Published var languagesText: String
     @Published var districtsText: String
+    @Published var avatarData: Data?
 
     private let service = RealmService()
 
@@ -27,6 +28,7 @@ class EditUserProfileViewModel: ObservableObject {
         self.hasCertificates = user.hasCertificates
         self.languagesText = user.languages.joined(separator: ", ")
         self.districtsText = user.districts.map { $0.rawValue }.joined(separator: ", ")
+        self.avatarData = user.avatarData
     }
 
     func saveChanges() {
@@ -39,6 +41,7 @@ class EditUserProfileViewModel: ObservableObject {
             user.expectedTrainerExperience = expectedTrainerExperience
             user.worksWithChildren = worksWithChildren
             user.hasCertificates = hasCertificates
+            user.avatarData = avatarData
 
             // 🔁 Оновлення languages
             user.languages.removeAll()

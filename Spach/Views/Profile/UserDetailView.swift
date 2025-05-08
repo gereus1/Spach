@@ -9,16 +9,19 @@ import AppKit
 
 struct UserDetailView: View {
     let user: User
-
-    /// Picks the appropriate system background for cards on each platform
+    let contact: ContactRequest?
+    
+    @State private var showConfirmationAlert = false
+    private let contactService = ContactService()
+    
     private var cardBackground: Color {
-        #if os(macOS)
+#if os(macOS)
         Color(nsColor: .windowBackgroundColor)
-        #else
+#else
         Color(uiColor: .systemBackground)
-        #endif
+#endif
     }
-
+    
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
@@ -27,25 +30,20 @@ struct UserDetailView: View {
                 HStack {
                     Spacer()
                     Group {
-                        // 1️⃣ Local Realm data
                         if let data = user.avatarData {
-                            #if os(iOS)
+#if os(iOS)
                             if let ui = UIImage(data: data) {
                                 Image(uiImage: ui).resizable()
                             }
-                            #elseif os(macOS)
+#elseif os(macOS)
                             if let ns = NSImage(data: data) {
                                 Image(nsImage: ns).resizable()
                             }
-                            #endif
-                        }
-                        // 2️⃣ Remote URL via Kingfisher
-                        else if let urlString = user.avatarURL,
-                                let url = URL(string: urlString) {
+#endif
+                        } else if let urlString = user.avatarURL,
+                                  let url = URL(string: urlString) {
                             KFImage(url).resizable()
-                        }
-                        // 3️⃣ Placeholder
-                        else {
+                        } else {
                             Image(systemName: "person.crop.circle.fill")
                                 .resizable()
                                 .foregroundColor(.gray)
@@ -58,13 +56,13 @@ struct UserDetailView: View {
                     Spacer()
                 }
                 .padding(.top, 16)
-
+                
                 // MARK: — Основна інформація
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Основна інформація")
                         .font(.title2).bold()
                         .padding(.bottom, 4)
-
+                    
                     Group {
                         Label("Email: \(user.email)", systemImage: "envelope")
                         Label("Ім’я: \(user.name)", systemImage: "person.circle")
@@ -85,13 +83,13 @@ struct UserDetailView: View {
                         .fill(cardBackground)
                 )
                 .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
-
+                
                 // MARK: — Додаткові параметри
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Додатково")
                         .font(.title2).bold()
                         .padding(.bottom, 4)
-
+                    
                     HStack {
                         Toggle("Працює з дітьми", isOn: .constant(user.worksWithChildren))
                         Toggle("Має сертифікати", isOn: .constant(user.hasCertificates))
@@ -104,14 +102,59 @@ struct UserDetailView: View {
                         .fill(cardBackground)
                 )
                 .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
-
+                
+                // MARK: — Кнопка “Зв’язатися”
+                if contact == nil {
+                    Text("Запит не знайдено.")
+                        .foregroundColor(.red)
+                        .font(.footnote)
+                        .padding(.top, 8)
+                } else if let contact = contact, !contact.trainerConfirmed && !contact.rejected {
+                    HStack(spacing: 16) {
+                        Button(action: {
+                            contactService.confirmRequest(byTrainer: contact.trainerId, forUser: contact.userId)
+                            showConfirmationAlert = true
+                        }) {
+                            Text("Зв’язатися")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.green)
+                                .foregroundColor(.white)
+                                .cornerRadius(12)
+                        }
+                        
+                        Button(action: {
+                            contactService.rejectRequest(userId: contact.userId, trainerId: contact.trainerId)
+                            showConfirmationAlert = true
+                        }) {
+                            Text("Відхилити")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.red)
+                                .foregroundColor(.white)
+                                .cornerRadius(12)
+                        }
+                    }
+                    .padding(.top, 16)
+                }
+                
+                
                 Spacer(minLength: 20)
             }
             .padding()
-            #if os(macOS)
+#if os(macOS)
             .frame(maxWidth: 600)
-            #endif
+#endif
             .navigationTitle("Профіль користувача")
+            .alert(isPresented: $showConfirmationAlert) {
+                Alert(
+                    title: Text("Дія виконана"),
+                    message: Text("Ви оновили статус запиту. Клієнт буде повідомлений."),
+                    dismissButton: .default(Text("OK"))
+                )
+            }
         }
     }
 }

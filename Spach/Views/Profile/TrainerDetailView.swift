@@ -9,8 +9,17 @@ import AppKit
 
 struct TrainerDetailView: View {
     let trainer: Trainer
+    let user: User
+    let contact: ContactRequest?
 
-    /// Chooses the correct background color on each platform
+    @AppStorage("currentEmail") private var currentEmail = ""
+    @State private var showAlert = false
+    private let contactService = ContactService()
+
+    private var isContactEstablished: Bool {
+        contact?.userRequested == true && contact?.trainerConfirmed == true
+    }
+
     private var cardBackground: Color {
         #if os(macOS)
         Color(nsColor: .windowBackgroundColor)
@@ -27,7 +36,6 @@ struct TrainerDetailView: View {
                 HStack {
                     Spacer()
                     Group {
-                        // 1) Local Realm data
                         if let data = trainer.avatarData {
                             #if os(iOS)
                             if let ui = UIImage(data: data) {
@@ -38,14 +46,10 @@ struct TrainerDetailView: View {
                                 Image(nsImage: ns).resizable()
                             }
                             #endif
-                        }
-                        // 2) Remote URL via Kingfisher
-                        else if let urlString = trainer.avatarURL,
-                                let url = URL(string: urlString) {
+                        } else if let urlString = trainer.avatarURL,
+                                  let url = URL(string: urlString) {
                             KFImage(url).resizable()
-                        }
-                        // 3) Fallback placeholder
-                        else {
+                        } else {
                             Image(systemName: "person.crop.square.fill")
                                 .resizable()
                                 .foregroundColor(.gray)
@@ -65,9 +69,16 @@ struct TrainerDetailView: View {
                         .padding(.bottom, 4)
 
                     Group {
-                        Label("Email: \(trainer.email)", systemImage: "envelope")
-                        Label("Імʼя: \(trainer.name)", systemImage: "person.circle")
-                        Label("Прізвище: \(trainer.surname)", systemImage: "person.circle")
+                        if isContactEstablished {
+                            Label("Email: \(trainer.email)", systemImage: "envelope")
+                            Label("Імʼя: \(trainer.name)", systemImage: "person.circle")
+                            Label("Прізвище: \(trainer.surname)", systemImage: "person.circle")
+                        } else {
+                            Label("Email: — приховано —", systemImage: "envelope")
+                            Label("Імʼя: — приховано —", systemImage: "person.circle")
+                            Label("Прізвище: — приховано —", systemImage: "person.circle")
+                        }
+
                         Label("Вік: \(trainer.age) р.", systemImage: "calendar")
                         Label("Досвід: \(trainer.experience) р.", systemImage: "figure.walk")
                         Label("Рейтинг: \(trainer.rating, specifier: "%.1f")", systemImage: "star.fill")
@@ -78,10 +89,7 @@ struct TrainerDetailView: View {
                     .font(.body)
                 }
                 .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(cardBackground)
-                )
+                .background(RoundedRectangle(cornerRadius: 12).fill(cardBackground))
                 .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
 
                 // MARK: – Додатково
@@ -97,11 +105,24 @@ struct TrainerDetailView: View {
                     .toggleStyle(SwitchToggleStyle())
                 }
                 .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(cardBackground)
-                )
+                .background(RoundedRectangle(cornerRadius: 12).fill(cardBackground))
                 .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+
+                // MARK: – Кнопка “Зв’язатися”
+                if contact?.userRequested != true {
+                    Button(action: {
+                        contactService.createRequest(fromUser: user.id.stringValue, toTrainer: trainer.id.stringValue)
+                        showAlert = true
+                    }) {
+                        Text("Зв’язатися")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.accentColor)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                    }
+                }
 
                 Spacer()
             }
@@ -110,6 +131,11 @@ struct TrainerDetailView: View {
             .frame(maxWidth: 600)
             #endif
             .navigationTitle("Профіль тренера")
+            .alert(isPresented: $showAlert) {
+                Alert(title: Text("Запит надіслано!"),
+                      message: Text("Ми надіслали запит тренеру."),
+                      dismissButton: .default(Text("OK")))
+            }
         }
     }
 }

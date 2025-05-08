@@ -9,29 +9,43 @@ struct SpachApp: SwiftUI.App {
     @AppStorage("hasSeenOnboarding")   private var hasSeenOnboarding = false
 
     init() {
-        // 1) Піднімаємо версію схеми — тепер 4
+        // 🔼 Піднімаємо версію схеми — тепер 6
         let config = Realm.Configuration(
-            schemaVersion: 4,
+            schemaVersion: 7,
             migrationBlock: { migration, oldVersion in
-                guard oldVersion < 4 else { return }
+                guard oldVersion < 7 else { return }
 
-                // — Міграція для districts
+                // — Міграція для districts (User)
                 migration.enumerateObjects(ofType: User.className()) { _, newObject in
                     guard let list = newObject?["districts"] as? RealmSwift.List<String> else { return }
                     list.append(District.shevchenkivskyi.rawValue)
                 }
-                // Для Trainer: додаємо дефолтний район
+
+                // — Міграція для districts (Trainer)
                 migration.enumerateObjects(ofType: Trainer.className()) { _, newObject in
                     guard let list = newObject?["districts"] as? RealmSwift.List<String> else { return }
                     list.append(District.shevchenkivskyi.rawValue)
                 }
 
-                // — Міграція для avatarData: явно встановлюємо nil для старих записів
-                migration.enumerateObjects(ofType: User.className()) { _, newObject in
-                    newObject?["avatarData"] = nil
-                }
-                migration.enumerateObjects(ofType: Trainer.className()) { _, newObject in
-                    newObject?["avatarData"] = nil
+                // — Міграція для avatarData
+//                migration.enumerateObjects(ofType: User.className()) { _, newObject in
+//                    newObject?["avatarData"] = nil
+//                }
+//                migration.enumerateObjects(ofType: Trainer.className()) { _, newObject in
+//                    newObject?["avatarData"] = nil
+//                }
+
+                // — Міграція ContactRequest
+                migration.enumerateObjects(ofType: "ContactRequest") { _, newObject in
+                    // Міграція до нової структури
+                    // Старі поля вже недоступні, тому просто встановлюємо дефолти
+                    newObject?["userRequested"] = true
+                    newObject?["trainerConfirmed"] = false
+
+                    // Нове поле
+                    if newObject?["rejected"] == nil {
+                        newObject?["rejected"] = false
+                    }
                 }
             },
             deleteRealmIfMigrationNeeded: false
@@ -53,8 +67,6 @@ struct SpachApp: SwiftUI.App {
 
         // 3) Застосовуємо конфігурацію
         Realm.Configuration.defaultConfiguration = finalConfig
-
-        //UserDefaults.standard.set(false, forKey: "hasSeenOnboarding")
     }
 
     var body: some Scene {

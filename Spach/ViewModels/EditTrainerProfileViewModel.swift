@@ -16,6 +16,7 @@ class EditTrainerProfileViewModel: ObservableObject {
     @Published var hasCertificates: Bool
     @Published var languagesText: String
     @Published var districtsText: String
+    @Published var avatarData: Data?
 
     init(trainer: Trainer) {
         self.trainer = trainer
@@ -31,6 +32,7 @@ class EditTrainerProfileViewModel: ObservableObject {
         self.hasCertificates = trainer.hasCertificates
         self.languagesText = trainer.languages.joined(separator: ", ")
         self.districtsText = trainer.districts.map { $0.rawValue }.joined(separator: ", ")
+        self.avatarData = trainer.avatarData
     }
 
     func saveChanges() {
@@ -46,6 +48,7 @@ class EditTrainerProfileViewModel: ObservableObject {
             trainer.yearsInCategory = yearsInCategory
             trainer.worksWithChildren = worksWithChildren
             trainer.hasCertificates = hasCertificates
+            trainer.avatarData = avatarData
 
             trainer.languages.removeAll()
             trainer.languages.append(objectsIn: languagesText

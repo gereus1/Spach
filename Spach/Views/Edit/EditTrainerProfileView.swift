@@ -8,6 +8,8 @@ struct EditTrainerProfileView: View {
 
     @State private var showSuccess = false
     @Namespace private var animation
+    @State private var selectedImage: NSImage? = nil
+    @State private var showImagePicker = false
 
     init(trainer: Trainer, refreshTrigger: Binding<Bool>) {
         self._refreshTrigger = refreshTrigger
@@ -22,7 +24,46 @@ struct EditTrainerProfileView: View {
                         .font(.title.bold())
                         .padding(.top, 8)
 
-                    // 🔹 Основна інформація
+                    VStack(spacing: 8) {
+                        if let selectedImage {
+                            Image(nsImage: selectedImage)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 100, height: 100)
+                                .clipShape(Circle())
+                                .shadow(radius: 4)
+                        } else if let data = vm.avatarData,
+                                  let nsImage = NSImage(data: data) {
+                            Image(nsImage: nsImage)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 100, height: 100)
+                                .clipShape(Circle())
+                                .shadow(radius: 4)
+                        } else {
+                            Image(systemName: "person.crop.circle.fill")
+                                .resizable()
+                                .frame(width: 100, height: 100)
+                                .foregroundColor(.gray.opacity(0.5))
+                        }
+
+                        Button("Оновити фото") {
+                            showImagePicker = true
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                    .fileImporter(
+                        isPresented: $showImagePicker,
+                        allowedContentTypes: [.image],
+                        allowsMultipleSelection: false
+                    ) { result in
+                        guard let url = try? result.get().first,
+                              let nsImage = NSImage(contentsOf: url) else { return }
+
+                        selectedImage = nsImage
+                        vm.avatarData = nsImage.tiffRepresentation
+                    }
+
                     GroupBox(label: Label("Основна інформація", systemImage: "person")) {
                         VStack(alignment: .leading, spacing: 12) {
                             TextField("Ім’я", text: $vm.name)
@@ -40,7 +81,6 @@ struct EditTrainerProfileView: View {
                         }
                     }
 
-                    // 🔹 Послуги
                     GroupBox(label: Label("Послуги", systemImage: "globe")) {
                         VStack(alignment: .leading, spacing: 12) {
                             TextField("Мови (через кому)", text: $vm.languagesText)
@@ -53,14 +93,14 @@ struct EditTrainerProfileView: View {
                         }
                     }
 
-                    // 🔹 Кнопка збереження з анімацією
                     Button(action: {
+                        vm.saveChanges()
+                        selectedImage = nil
+                        refreshTrigger.toggle()
+
                         withAnimation(.easeInOut(duration: 0.3)) {
                             showSuccess = true
                         }
-
-                        vm.saveChanges()
-                        refreshTrigger.toggle()
 
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                             withAnimation {
@@ -83,7 +123,6 @@ struct EditTrainerProfileView: View {
                 .frame(maxWidth: 500)
             }
 
-            // 🔹 Успішне збереження банер
             if showSuccess {
                 VStack {
                     HStack {
@@ -104,6 +143,11 @@ struct EditTrainerProfileView: View {
                 }
                 .padding(.top, 16)
                 .frame(maxWidth: .infinity)
+            }
+        }
+        .onAppear {
+            if selectedImage == nil, let data = vm.avatarData {
+                selectedImage = NSImage(data: data)
             }
         }
     }
