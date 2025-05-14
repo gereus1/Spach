@@ -77,7 +77,7 @@ struct EditTrainerProfileView: View {
                             Stepper("Досвід: \(vm.experience)", value: $vm.experience, in: 0...50)
                             Stepper("Роки в категорії: \(vm.yearsInCategory)", value: $vm.yearsInCategory, in: 0...50)
                             Stepper("Ціна за сесію: \(vm.pricePerSession, specifier: "%.0f")₴", value: $vm.pricePerSession, in: 0...10000, step: 100)
-                            Stepper("Рейтинг: \(vm.rating, specifier: "%.1f")", value: $vm.rating, in: 0...5, step: 0.1)
+
                         }
                     }
 
@@ -86,6 +86,8 @@ struct EditTrainerProfileView: View {
                             TextField("Мови (через кому)", text: $vm.languagesText)
                                 .textFieldStyle(.roundedBorder)
                             TextField("Райони (через кому)", text: $vm.districtsText)
+                                .textFieldStyle(.roundedBorder)
+                            TextField("Категорії (через кому)", text: $vm.categoriesText)
                                 .textFieldStyle(.roundedBorder)
 
                             Toggle("Працює з дітьми", isOn: $vm.worksWithChildren)
@@ -152,3 +154,4 @@ struct EditTrainerProfileView: View {
         }
     }
 }
+

@@ -15,7 +15,8 @@ class User: Object, Identifiable {
     @Persisted var languages: List<String>
     @Persisted var worksWithChildren: Bool = false
     @Persisted var hasCertificates: Bool = false
-    @Persisted var rating: Double = 0.0
+    @Persisted var expectedRating: Double = 0.0
     @Persisted var pricePerSession: Double = 0.0
+    @Persisted var expectedCategories: List<SportCategory>
     @Persisted var yearsInCategory: Int = 0
 }

@@ -5,7 +5,8 @@ struct UserProfileView: View {
     @AppStorage("currentEmail") private var currentEmail = ""
     @State private var user: User?
     @State private var isEditing = false
-    @State private var refreshTrigger = false // 🔁 Тригер для оновлення
+    @State private var refreshTrigger = false
+    @AppStorage("isLoggedIn") private var isLoggedIn = false
 
     private let service = RealmService()
 
@@ -49,7 +50,7 @@ struct UserProfileView: View {
                     GroupBox(label: Label("Особисті дані", systemImage: "person.crop.circle")) {
                         ProfileRow(title: "Вік", value: "\(u.age) р.")
                         ProfileRow(title: "Очікуваний досвід тренера", value: "\(u.expectedTrainerExperience) р.")
-                        ProfileRow(title: "Рейтинг", value: String(format: "%.1f", u.rating))
+                        ProfileRow(title: "Очікуваний рейтинг тренера", value: String(format: "%.1f", u.expectedRating))
                         ProfileRow(title: "Ціна за сесію", value: "\(Int(u.pricePerSession))₴")
                         ProfileRow(title: "Роки в категорії", value: "\(u.yearsInCategory)")
                     }
@@ -57,6 +58,7 @@ struct UserProfileView: View {
                     // 🔷 Уподобання
                     GroupBox(label: Label("Уподобання", systemImage: "slider.horizontal.3")) {
                         ProfileRow(title: "Райони", value: u.districts.map { $0.rawValue }.joined(separator: ", "))
+                        ProfileRow(title: "Категорії", value: u.expectedCategories.map { $0.rawValue }.joined(separator: ", "))
                         ProfileRow(title: "Мови", value: u.languages.joined(separator: ", "))
                         Toggle("Працює з дітьми", isOn: .constant(u.worksWithChildren)).disabled(true)
                         Toggle("Є сертифікати", isOn: .constant(u.hasCertificates)).disabled(true)
@@ -88,6 +90,14 @@ struct UserProfileView: View {
         }
         .onAppear {
             user = service.fetchCurrentUser(email: currentEmail)
+            
+            let result = service.fetchCurrentUser(email: currentEmail)
+            if result == nil {
+                currentEmail = ""
+                isLoggedIn = false
+            } else {
+                user = result
+            }
         }
         // 🔁 Оновлення профілю після редагування
         .sheet(isPresented: $isEditing) {

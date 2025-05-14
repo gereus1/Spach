@@ -84,6 +84,7 @@ struct TrainerDetailView: View {
                         Label("Рейтинг: \(trainer.rating, specifier: "%.1f")", systemImage: "star.fill")
                         Label("Ціна за сесію: \(trainer.pricePerSession, specifier: "%.0f")₴", systemImage: "creditcard")
                         Label("Райони роботи: \(trainer.districts.map { $0.rawValue }.joined(separator: ", "))", systemImage: "map")
+                        Label("Категорії спорту: \(trainer.categories.map { $0.rawValue }.joined(separator: ", "))", systemImage: "figure.walk.circle")
                         Label("Мови: \(trainer.languages.joined(separator: ", "))", systemImage: "globe")
                     }
                     .font(.body)

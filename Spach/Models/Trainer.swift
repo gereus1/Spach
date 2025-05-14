@@ -17,5 +17,6 @@ class Trainer: Object, Identifiable {
     @Persisted var hasCertificates: Bool = false
     @Persisted var rating: Double = 0.0
     @Persisted var pricePerSession: Double = 0.0
+    @Persisted var categories: List<SportCategory>
     @Persisted var yearsInCategory: Int = 0
 }

@@ -6,6 +6,7 @@ struct TrainerProfileView: View {
     @State private var trainer: Trainer?
     @State private var isEditing = false
     @State private var refreshTrigger = false
+    @AppStorage("isLoggedIn") private var isLoggedIn = false
 
     private let service = RealmService()
 
@@ -57,6 +58,7 @@ struct TrainerProfileView: View {
                     // Послуги
                     GroupBox(label: Label("Послуги", systemImage: "globe")) {
                         ProfileRow(title: "Райони", value: t.districts.map { $0.rawValue }.joined(separator: ", "))
+                        ProfileRow(title: "Категорії спорту", value: t.categories.map { $0.rawValue }.joined(separator: ", "))
                         ProfileRow(title: "Мови", value: t.languages.joined(separator: ", "))
                         Toggle("Працює з дітьми", isOn: .constant(t.worksWithChildren)).disabled(true)
                         Toggle("Є сертифікати", isOn: .constant(t.hasCertificates)).disabled(true)
@@ -88,6 +90,14 @@ struct TrainerProfileView: View {
         }
         .onAppear {
             trainer = service.fetchCurrentTrainer(email: currentEmail)
+            
+            let result = service.fetchCurrentTrainer(email: currentEmail)
+            if result == nil {
+                currentEmail = ""
+                isLoggedIn = false
+            } else {
+                trainer = result
+            }
         }
         .sheet(isPresented: $isEditing) {
             if let trainer = trainer {

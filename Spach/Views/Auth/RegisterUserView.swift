@@ -9,6 +9,7 @@ struct RegisterUserView: View {
     @State private var age = 25.0
     @State private var experience = 1.0
     @State private var selectedDistricts: [District] = []
+    @State private var selectedCategories: [SportCategory] = []
     @State private var pricePerSession = 500
     @State private var yearsInCategory = 2
     @State private var languagesText = ""
@@ -88,6 +89,20 @@ struct RegisterUserView: View {
                             ))
                         }
                     }
+                    
+                    GlassCard {
+                        Text("Категорії, у яких хочете тренуватися").font(.headline)
+                        ForEach(SportCategory.allCases, id: \.self) { category in
+                            Toggle(category.rawValue, isOn: Binding(
+                                get: { selectedCategories.contains(category) },
+                                set: { isOn in
+                                    if isOn { selectedCategories.append(category) }
+                                    else { selectedCategories.removeAll { $0 == category } }
+                                }
+                            ))
+                        }
+                    }
+
 
                     // 🔷 Кнопка
                     Button("Зареєструватися") {
@@ -135,6 +150,7 @@ struct RegisterUserView: View {
         }
 
         u.districts.append(objectsIn: selectedDistricts)
+        u.expectedCategories.append(objectsIn: selectedCategories)
         u.pricePerSession = Double(pricePerSession)
         u.yearsInCategory = yearsInCategory
         let langs = languagesText

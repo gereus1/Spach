@@ -13,6 +13,7 @@ class EditUserProfileViewModel: ObservableObject {
     @Published var hasCertificates: Bool
     @Published var languagesText: String
     @Published var districtsText: String
+    @Published var categoriesText: String
     @Published var avatarData: Data?
 
     private let service = RealmService()
@@ -28,6 +29,7 @@ class EditUserProfileViewModel: ObservableObject {
         self.hasCertificates = user.hasCertificates
         self.languagesText = user.languages.joined(separator: ", ")
         self.districtsText = user.districts.map { $0.rawValue }.joined(separator: ", ")
+        self.categoriesText = user.expectedCategories.map { $0.rawValue }.joined(separator: ", ")
         self.avatarData = user.avatarData
     }
 
@@ -43,20 +45,25 @@ class EditUserProfileViewModel: ObservableObject {
             user.hasCertificates = hasCertificates
             user.avatarData = avatarData
 
-            // 🔁 Оновлення languages
             user.languages.removeAll()
             let parsedLanguages = languagesText
                 .split(separator: ",")
                 .map { $0.trimmingCharacters(in: .whitespaces) }
             user.languages.append(objectsIn: parsedLanguages)
 
-            // 🔁 Оновлення districts
             user.districts.removeAll()
             let parsedDistricts = districtsText
                 .split(separator: ",")
                 .compactMap { District(rawValue: $0.trimmingCharacters(in: .whitespaces)) }
             user.districts.append(objectsIn: parsedDistricts)
 
+            user.expectedCategories.removeAll()
+            let parsedCategories = categoriesText
+                .split(separator: ",")
+                .compactMap { SportCategory(rawValue: $0.trimmingCharacters(in: .whitespaces)) }
+            user.expectedCategories.append(objectsIn: parsedCategories)
+
+            
             realm.add(user, update: .modified)
         }
     }

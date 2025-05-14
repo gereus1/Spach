@@ -69,10 +69,11 @@ struct UserDetailView: View {
                         Label("Прізвище: \(user.surname)", systemImage: "person.circle.fill")
                         Label("Вік: \(user.age) р.", systemImage: "calendar")
                         Label("Очікуваний досвід тренера: \(user.expectedTrainerExperience) р.", systemImage: "figure.walk")
-                        Label("Рейтинг: \(user.rating, specifier: "%.1f")", systemImage: "star.fill")
+                        Label("Очікуваний рейтинг тренера: \(user.expectedRating, specifier: "%.1f")", systemImage: "star.fill")
                         Label("Ціна за сесію: \(user.pricePerSession, specifier: "%.0f")₴", systemImage: "creditcard")
                         Label("Роки в категорії: \(user.yearsInCategory)", systemImage: "clock")
                         Label("Райони проживання: \(user.districts.map { $0.rawValue }.joined(separator: ", "))", systemImage: "map")
+                        Label("Очікувані категорії: \(user.expectedCategories.map { $0.rawValue }.joined(separator: ", "))", systemImage: "figure.walk.circle")
                         Label("Мови: \(user.languages.joined(separator: ", "))", systemImage: "globe")
                     }
                     .font(.body)

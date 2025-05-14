@@ -87,6 +87,8 @@ struct EditUserProfileView: View {
                                 .textFieldStyle(.roundedBorder)
                             TextField("Райони (через кому)", text: $vm.districtsText)
                                 .textFieldStyle(.roundedBorder)
+                            TextField("Категорії (через кому)", text: $vm.categoriesText)
+                                .textFieldStyle(.roundedBorder)
 
                             Toggle("Працює з дітьми", isOn: $vm.worksWithChildren)
                             Toggle("Є сертифікати", isOn: $vm.hasCertificates)

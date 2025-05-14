@@ -9,6 +9,7 @@ struct RegisterTrainerView: View {
     @State private var age = 30.0
     @State private var experience = 5.0
     @State private var selectedDistricts: [District] = []
+    @State private var selectedCategories: [SportCategory] = []
     @State private var pricePerSession = 500
     @State private var yearsInCategory = 2
     @State private var languagesText = ""
@@ -75,7 +76,6 @@ struct RegisterTrainerView: View {
                         Toggle("Є сертифікати", isOn: $hasCertificates)
                     }
 
-                    // 🔷 Райони
                     GlassCard {
                         Text("Райони, в яких працює").font(.headline)
                         ForEach(District.allCases, id: \.self) { district in
@@ -84,6 +84,19 @@ struct RegisterTrainerView: View {
                                 set: { isOn in
                                     if isOn { selectedDistricts.append(district) }
                                     else { selectedDistricts.removeAll { $0 == district } }
+                                }
+                            ))
+                        }
+                    }
+                    
+                    GlassCard {
+                        Text("Категорії, в яких працює").font(.headline)
+                        ForEach(SportCategory.allCases, id: \.self) { category in
+                            Toggle(category.rawValue, isOn: Binding(
+                                get: { selectedCategories.contains(category) },
+                                set: { isOn in
+                                    if isOn { selectedCategories.append(category) }
+                                    else { selectedCategories.removeAll { $0 == category } }
                                 }
                             ))
                         }
@@ -135,6 +148,7 @@ struct RegisterTrainerView: View {
         }
 
         t.districts.append(objectsIn: selectedDistricts)
+        t.categories.append(objectsIn: selectedCategories)
         t.pricePerSession = Double(pricePerSession)
         t.yearsInCategory = yearsInCategory
         let langs = languagesText

@@ -32,7 +32,7 @@ extension User {
         var vector: [Double] = [
             Double(expectedTrainerExperience),
             Double(age),
-            rating,
+            expectedRating,
             pricePerSession,
             Double(yearsInCategory)
         ]
