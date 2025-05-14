@@ -7,6 +7,7 @@ struct TrainerProfileView: View {
     @State private var isEditing = false
     @State private var refreshTrigger = false
     @AppStorage("isLoggedIn") private var isLoggedIn = false
+    @State private var ratingCount = 0
 
     private let service = RealmService()
 
@@ -35,6 +36,14 @@ struct TrainerProfileView: View {
                                 .shadow(radius: 8)
                         }
                         #endif
+                    } else {
+                        Image(systemName: "person.crop.circle.fill")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 120, height: 120)
+                            .foregroundColor(.gray.opacity(0.4))
+                            .clipShape(Circle())
+                            .shadow(radius: 8)
                     }
 
                     // Імʼя та пошта
@@ -50,7 +59,10 @@ struct TrainerProfileView: View {
                     GroupBox(label: Label("Інформація", systemImage: "person.fill")) {
                         ProfileRow(title: "Вік", value: "\(t.age) р.")
                         ProfileRow(title: "Досвід", value: "\(t.experience) р.")
-                        ProfileRow(title: "Рейтинг", value: String(format: "%.1f", t.rating))
+                        ProfileRow(
+                            title: "Рейтинг",
+                            value: String(format: "%.1f", t.rating) + " (\(ratingCount))"
+                        )
                         ProfileRow(title: "Ціна за сесію", value: "\(Int(t.pricePerSession))₴")
                         ProfileRow(title: "Роки в категорії", value: "\(t.yearsInCategory)")
                     }
@@ -89,14 +101,13 @@ struct TrainerProfileView: View {
             .frame(maxWidth: .infinity)
         }
         .onAppear {
-            trainer = service.fetchCurrentTrainer(email: currentEmail)
-            
             let result = service.fetchCurrentTrainer(email: currentEmail)
-            if result == nil {
+            if let trainer = result {
+                self.trainer = trainer
+                self.ratingCount = service.fetchRatings(for: trainer.id).count
+            } else {
                 currentEmail = ""
                 isLoggedIn = false
-            } else {
-                trainer = result
             }
         }
         .sheet(isPresented: $isEditing) {
@@ -106,6 +117,9 @@ struct TrainerProfileView: View {
         }
         .onChange(of: refreshTrigger) {
             trainer = service.fetchCurrentTrainer(email: currentEmail)
+            if let trainer = trainer {
+                self.ratingCount = service.fetchRatings(for: trainer.id).count
+            }
         }
     }
 }

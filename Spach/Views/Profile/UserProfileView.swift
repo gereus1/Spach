@@ -35,6 +35,14 @@ struct UserProfileView: View {
                                 .shadow(radius: 8)
                         }
                         #endif
+                    } else {
+                        Image(systemName: "person.crop.circle.fill")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 120, height: 120)
+                            .foregroundColor(.gray.opacity(0.4))
+                            .clipShape(Circle())
+                            .shadow(radius: 8)
                     }
 
                     // 🔷 Ім'я та email

@@ -15,6 +15,7 @@ struct RegisterUserView: View {
     @State private var languagesText = ""
     @State private var worksWithChildren = false
     @State private var hasCertificates = false
+    @State private var expectedRating = 0.0
 
     @State private var avatarImage: PlatformImage? = nil
     @State private var showImagePicker = false
@@ -69,6 +70,7 @@ struct RegisterUserView: View {
                         IconTextField(icon: "person", placeholder: "Прізвище", text: $surname)
                         LabeledSlider(title: "Вік", value: $age, range: 10...100)
                         LabeledSlider(title: "Очікуваний досвід тренера", value: $experience, range: 0...50)
+                        LabeledSlider(title: "Очікуваний рейтинг тренера", value: $expectedRating, range: 0...5, step: 0.1)
                         LabeledStepper(title: "Ціна за сесію", value: $pricePerSession, range: 0...10000, step: 50, unit: "₴")
                         LabeledStepper(title: "Роки в категорії", value: $yearsInCategory, range: 0...50, unit: "р.")
                         IconTextField(icon: "globe", placeholder: "Мови (через кому)", text: $languagesText)
@@ -136,6 +138,7 @@ struct RegisterUserView: View {
         u.passwordHash = password
         u.age = Int(age)
         u.expectedTrainerExperience = Int(experience)
+        u.expectedRating = expectedRating
 
         if let img = avatarImage {
             #if os(iOS)

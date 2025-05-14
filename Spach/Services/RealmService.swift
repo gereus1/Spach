@@ -34,6 +34,16 @@ final class RealmService {
         realm.objects(User.self)
              .first(where: { $0.email == email })
     }
+    
+    func fetchRatings(for trainerId: ObjectId) -> Results<TrainerRating> {
+        realm.objects(TrainerRating.self).where { $0.trainerId == trainerId }
+    }
+    
+    func fetchUserRating(for trainerId: ObjectId, userId: ObjectId) -> TrainerRating? {
+        realm.objects(TrainerRating.self)
+            .filter("trainerId == %@ AND userId == %@", trainerId, userId)
+            .first
+    }
 
     func add<T: Object>(_ object: T) {
         try! realm.write { realm.add(object) }
@@ -54,7 +64,68 @@ final class RealmService {
                 block(user)
             }
         }
+    
+    func submitRating(for trainerId: ObjectId, from userId: ObjectId, value: Int) {
+        if realm.objects(TrainerRating.self)
+            .filter("trainerId == %@ AND userId == %@", trainerId, userId)
+            .first != nil {
+                return
+            }
+
+        guard let trainer = realm.object(ofType: Trainer.self, forPrimaryKey: trainerId) else { return }
+
+        let rating = TrainerRating()
+        rating.trainerId = trainerId
+        rating.userId = userId
+        rating.rating = value
+
+        try? realm.write {
+            realm.add(rating)
+
+            // Оновити рейтинг тренера
+            let ratings = realm.objects(TrainerRating.self).where { $0.trainerId == trainerId }
+            let average = Double(ratings.map(\.rating).reduce(0, +)) / Double(ratings.count)
+            trainer.rating = average
+        }
     }
+    
+    func upsertRating(for trainerId: ObjectId, from userId: ObjectId, value: Int) {
+        guard let trainer = realm.object(ofType: Trainer.self, forPrimaryKey: trainerId) else { return }
+
+        if let existing = realm.objects(TrainerRating.self)
+            .filter("trainerId == %@ AND userId == %@", trainerId, userId)
+            .first {
+            try? realm.write {
+                existing.rating = value
+                existing.createdAt = Date()
+            }
+        } else {
+            let newRating = TrainerRating()
+            newRating.trainerId = trainerId
+            newRating.userId = userId
+            newRating.rating = value
+            try? realm.write {
+                realm.add(newRating)
+            }
+        }
+
+        // Після оновлення — перерахунок середнього рейтингу
+        let ratings = realm.objects(TrainerRating.self).where { $0.trainerId == trainerId }
+        let average = Double(ratings.map(\.rating).reduce(0, +)) / Double(ratings.count)
+        try? realm.write {
+            trainer.rating = average
+        }
+    }
+
+    
+    func hasUserRated(trainerId: ObjectId, userId: ObjectId) -> Bool {
+        return realm.objects(TrainerRating.self)
+            .filter("trainerId == %@ AND userId == %@", trainerId, userId)
+            .first != nil
+    }
+}
+
+
     
     func addReview(user: User, trainer: Trainer, score: Double) {
       let realm = try! Realm()
@@ -71,4 +142,5 @@ final class RealmService {
                        .map(\.score)
         trainer.rating = all.reduce(0, +) / Double(all.count)
       }
-    }
+}
+

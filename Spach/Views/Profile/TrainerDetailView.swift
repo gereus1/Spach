@@ -11,10 +11,17 @@ struct TrainerDetailView: View {
     let trainer: Trainer
     let user: User
     let contact: ContactRequest?
+    private let service = RealmService()
+    private let contactService = ContactService()
 
     @AppStorage("currentEmail") private var currentEmail = ""
+    @AppStorage("userRole") private var userRole = ""
+    
+    @State private var hasRated = false
+    @State private var ratingCount: Int = 0
+    @State private var selectedRating = 0
     @State private var showAlert = false
-    private let contactService = ContactService()
+    @State private var showSuccess = false
 
     private var isContactEstablished: Bool {
         contact?.userRequested == true && contact?.trainerConfirmed == true
@@ -31,7 +38,7 @@ struct TrainerDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                
+
                 // MARK: – Avatar
                 HStack {
                     Spacer()
@@ -81,7 +88,7 @@ struct TrainerDetailView: View {
 
                         Label("Вік: \(trainer.age) р.", systemImage: "calendar")
                         Label("Досвід: \(trainer.experience) р.", systemImage: "figure.walk")
-                        Label("Рейтинг: \(trainer.rating, specifier: "%.1f")", systemImage: "star.fill")
+                        Label("Рейтинг: \(trainer.rating, specifier: "%.1f") (\(ratingCount))", systemImage: "star.fill")
                         Label("Ціна за сесію: \(trainer.pricePerSession, specifier: "%.0f")₴", systemImage: "creditcard")
                         Label("Райони роботи: \(trainer.districts.map { $0.rawValue }.joined(separator: ", "))", systemImage: "map")
                         Label("Категорії спорту: \(trainer.categories.map { $0.rawValue }.joined(separator: ", "))", systemImage: "figure.walk.circle")
@@ -92,6 +99,35 @@ struct TrainerDetailView: View {
                 .padding()
                 .background(RoundedRectangle(cornerRadius: 12).fill(cardBackground))
                 .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+
+                // MARK: – Оцінювання
+                if userRole == "user" && isContactEstablished {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Оцініть тренера:")
+                            .font(.headline)
+
+                        HStack {
+                            ForEach(1...5, id: \.self) { star in
+                                Image(systemName: "star.fill")
+                                    .resizable()
+                                    .frame(width: 24, height: 24)
+                                    .foregroundColor(.yellow)
+                                    .opacity(selectedRating >= star ? 1 : 0.3)
+                                    .onTapGesture {
+                                        selectedRating = star
+                                        submitRating()
+                                    }
+                            }
+                        }
+
+                        if showSuccess {
+                            Text("Оцінку надіслано!").font(.footnote).foregroundColor(.green)
+                        }
+                    }
+                    .padding()
+                    .background(RoundedRectangle(cornerRadius: 12).fill(cardBackground))
+                    .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+                }
 
                 // MARK: – Додатково
                 VStack(alignment: .leading, spacing: 12) {
@@ -138,5 +174,28 @@ struct TrainerDetailView: View {
                       dismissButton: .default(Text("OK")))
             }
         }
+        .onAppear {
+            let ratings = service.fetchRatings(for: trainer.id)
+            self.ratingCount = ratings.count
+
+            if let currentUser = service.fetchUser(byEmail: currentEmail),
+               let existingRating = service.fetchUserRating(for: trainer.id, userId: currentUser.id) {
+                self.hasRated = true
+                self.selectedRating = existingRating.rating
+            }
+        }
     }
+
+    // MARK: – Надсилання оцінки
+    private func submitRating() {
+        guard let currentUser = service.fetchUser(byEmail: currentEmail) else { return }
+
+        service.upsertRating(for: trainer.id, from: currentUser.id, value: selectedRating)
+
+        let ratings = service.fetchRatings(for: trainer.id)
+        ratingCount = ratings.count
+        showSuccess = true
+        hasRated = true
+    }
+
 }
