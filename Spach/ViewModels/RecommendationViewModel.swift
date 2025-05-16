@@ -17,15 +17,37 @@ class RecommendationViewModel: ObservableObject {
         let allVectors = trainers.map { $0.featureVector() } + [ user.expectationVector() ]
         let normalizer = FeatureNormalizer(vectors: allVectors)
 
-        // 2) нормалізуємо користувача
-        let userVecNorm = normalizer.normalize(user.expectationVector())
-
         // 3) порахуємо score
+        let userVec = user.expectationVector()
+
+        // Перевірка довжин
+        for trainer in trainers {
+            let trainerVec = trainer.featureVector()
+            
+            assert(userVec.count == trainerVec.count, "❌ Кількість елементів у векторах не збігається!")
+            assert(userVec.count == FeatureWeights.weights.count, "❌ Кількість ваг не збігається з векторами!")
+        }
+
+        let userVecNorm = normalizer.normalize(userVec)
+
         let scored: [(Trainer, Double)] = trainers.map { trainer in
-            let tNorm = normalizer.normalize(trainer.featureVector())
+            let tVec = trainer.featureVector()
+            let tNorm = normalizer.normalize(tVec)
             let score = normalizer.cosineSimilarity(tNorm, userVecNorm)
+            
+            print("⚖️ \(trainer.email): cosine = \(String(format: "%.4f", score))")
+            
+            print("User normalized vector:")
+            print(userVecNorm)
+
+            print("Trainer: \(trainer.email)")
+            print("Trainer normalized vector:")
+            print(tNorm)
+            print("→ Cosine score:", score)
+
             return (trainer, score)
         }
+        
 
         // 4) сортуємо і фільтруємо
         let sorted = scored
