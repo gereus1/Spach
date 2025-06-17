@@ -1,9 +1,10 @@
 import SwiftUI
 import Kingfisher
+import RealmSwift
 
 struct ClientRowView: View {
     let user: User
-    let request: ContactRequest
+    @ObservedRealmObject var request: ContactRequest
 
     private var statusColor: Color {
         if request.rejected { return .red }

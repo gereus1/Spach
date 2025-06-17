@@ -7,11 +7,11 @@ struct TrainerHomeView: View {
                 ClientRequestsView()
             }
             .tabItem {
-                Label("Клієнти", systemImage: "person.2")
+                Label("Мої клієнти", systemImage: "person.2")
             }
                 UserListView()
                     .tabItem {
-                        Label("Користувачі", systemImage: "person.2")
+                        Label("Клієнти", systemImage: "person.2")
                 }
             NavigationStack {
                 TrainerProfileView()
